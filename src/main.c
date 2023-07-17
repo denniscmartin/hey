@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,13 +6,27 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
+
+
+int socketfd;
+
+
+void sig_handler(int sig_num) {
+	if (sig_num == 2) {
+		printf("\nClosing socket\n");
+		shutdown(socketfd, 2);
+		exit(0);
+	}
+}
 
 
 int main() {
-	int socketfd = socket(AF_INET, SOCK_STREAM, 0);
+	signal(SIGINT, sig_handler);
+	socketfd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (socketfd == -1) {
-		printf("Socket creation failed\n");
+		perror("socket: ");
 		exit(1);
 	}
 
@@ -22,25 +37,31 @@ int main() {
 	sin.sin_port = htons(5050);
 
 	if (bind(socketfd, (struct sockaddr*)&sin, sizeof(sin)) == -1) {
-		printf("Socket binding failed\n");
+		perror("bind: ");
+		exit(1);
 	}
-
-	//if (connect(socketfd, (struct sockaddr*)&sin, sizeof(sin) == -1)) {
-		//printf("Socket connection failed\n");
-	//}
 
 	if (listen(socketfd, 10) == -1) {
-		printf("Listen failed\n");
+		perror("listen: ");
+		exit(1);
 	}
 
-	char sendBuff[50] = "Hello world\n";
+	printf("Waiting for connections...\n");
+	char send_buffer[100];
 
 	while (1) {
 		int connfd = accept(socketfd, (struct sockaddr*)NULL, NULL);
-		send(connfd, sendBuff, sizeof(sendBuff), 0);
+
+		if (connfd == -1) {
+			perror("accept: \n");
+			exit(1);
+		}
+
+		time_t now = time(NULL);
+		snprintf(send_buffer, sizeof(send_buffer), "Server time: %s\n", ctime(&now));
+		send(connfd, send_buffer, sizeof(send_buffer), 0);
 		shutdown(connfd, 2);
 	}
-
 
 	return 0;
 }
