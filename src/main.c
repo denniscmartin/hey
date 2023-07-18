@@ -6,26 +6,32 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <errno.h>
 
 
 int listenfd;
 
-void sig_handler(int sig_num) {
-	if (sig_num == 2) {
-		printf("\nClosing socket\n");
-		close(listenfd);
-		exit(0);
-	}
+void sigint_handler(int sig_num) {
+	printf("\nClosing socket\n");
+	close(listenfd);
+	exit(0);
+}
+
+void sigchld_handler(int s) {
+	int saved_errno = errno;
+	while(waitpid(-1, NULL, WNOHANG) > 0);
+	errno = saved_errno;
 }
 
 // Get IPv4 or IPv6
 struct IpPort {
 	char ipstr[INET6_ADDRSTRLEN];
-    unsigned short port;
+	unsigned short port;
 };
 
 struct IpPort get_ipport(struct sockaddr *sa) {
@@ -45,7 +51,7 @@ struct IpPort get_ipport(struct sockaddr *sa) {
 }
 
 int main() {
-	signal(SIGINT, sig_handler);
+	signal(SIGINT, sigint_handler);
 
 	struct addrinfo hints;
 	struct addrinfo *servinfo; 
@@ -83,7 +89,17 @@ int main() {
 		perror("listen: ");
 		exit(1);
 	}
-	
+
+	// Kill zombie child processes
+	struct sigaction sig;
+	sig.sa_handler = sigchld_handler;
+	sigemptyset(&sig.sa_mask);
+	sig.sa_flags = SA_RESTART;
+	if (sigaction(SIGCHLD, &sig, NULL) == -1) {
+		perror("sigaction: \n");
+		exit(1);
+	}
+
 	struct IpPort ipport = get_ipport(servinfo->ai_addr);
 	printf("Server IP: %s\n", ipport.ipstr);
 	printf("Listening on port: %u\n", ipport.port);
@@ -91,7 +107,6 @@ int main() {
 	char send_buffer[100];
 	struct sockaddr_storage clientinfo;
 	socklen_t clientinfo_size;
-
 	printf("Waiting for connections...\n");
 
 	while (1) {
