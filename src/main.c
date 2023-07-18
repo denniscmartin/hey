@@ -100,9 +100,9 @@ int main() {
 		exit(1);
 	}
 
-	struct IpPort ipport = get_ipport(servinfo->ai_addr);
-	printf("Server IP: %s\n", ipport.ipstr);
-	printf("Listening on port: %u\n", ipport.port);
+	struct IpPort server_ipport = get_ipport(servinfo->ai_addr);
+	printf("Server IP: %s\n", server_ipport.ipstr);
+	printf("Listening on port: %u\n", server_ipport.port);
 
 	char send_buffer[100];
 	struct sockaddr_storage clientinfo;
@@ -115,6 +115,10 @@ int main() {
 			perror("accept: \n");
 			exit(1);
 		}
+
+		struct IpPort client_ipport = get_ipport((struct sockaddr *)&clientinfo);
+		printf("Client IP: %s\n", client_ipport.ipstr);
+		printf("Client port: %u\n", client_ipport.port);
 
 		int pid = fork();
 		if (pid == 0) {
@@ -136,3 +140,4 @@ int main() {
 
 	return 0;
 }
+
