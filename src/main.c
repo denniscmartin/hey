@@ -12,20 +12,39 @@
 #include <time.h>
 
 
-int socketfd;
-
+int listenfd;
 
 void sig_handler(int sig_num) {
 	if (sig_num == 2) {
 		printf("\nClosing socket\n");
-		close(socketfd);
+		close(listenfd);
 		exit(0);
 	}
 }
 
+// Get IPv4 or IPv6
+struct IpPort {
+	char ipstr[INET6_ADDRSTRLEN];
+    unsigned short port;
+};
+
+struct IpPort get_ipport(struct sockaddr *sa) {
+	struct IpPort ipport;
+
+	if (sa->sa_family == AF_INET) {
+		struct sockaddr_in *ipv4 = (struct sockaddr_in *)sa;
+		inet_ntop(AF_INET, &(ipv4->sin_addr), ipport.ipstr, sizeof(ipport.ipstr));
+		ipport.port = ntohs(ipv4->sin_port);
+	} else {
+		struct sockaddr_in *ipv6 = (struct sockaddr_in *)sa;
+		inet_ntop(AF_INET, &(ipv6->sin_addr), ipport.ipstr, sizeof(ipport.ipstr));
+		ipport.port = ntohs(ipv6->sin_port);
+	}
+
+	return ipport;
+}
 
 int main() {
-
 	signal(SIGINT, sig_handler);
 
 	struct addrinfo hints;
@@ -41,28 +60,33 @@ int main() {
 		exit(1);
 	}
 
-	socketfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-
-	if (socketfd == -1) {
+	listenfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+	if (listenfd == -1) {
 		perror("socket: ");
 		exit(1);
 	}
 
-	// Reuse
+	// Avoid "Address already in use"
 	int yes = 1;
-	setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+		perror("setsockopt: \n");
+	}
 
-	if (bind(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
+	if (bind(listenfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
 		perror("bind: ");
 		exit(1);
 	}
 
 	freeaddrinfo(servinfo);
 
-	if (listen(socketfd, 10) == -1) {
+	if (listen(listenfd, 10) == -1) {
 		perror("listen: ");
 		exit(1);
 	}
+	
+	struct IpPort ipport = get_ipport(servinfo->ai_addr);
+	printf("Server IP: %s\n", ipport.ipstr);
+	printf("Listening on port: %u\n", ipport.port);
 
 	char send_buffer[100];
 	struct sockaddr_storage clientinfo;
@@ -71,16 +95,27 @@ int main() {
 	printf("Waiting for connections...\n");
 
 	while (1) {
-		int connfd = accept(socketfd, (struct sockaddr *)&clientinfo, &clientinfo_size);
-
+		int connfd = accept(listenfd, (struct sockaddr *)&clientinfo, &clientinfo_size);
 		if (connfd == -1) {
 			perror("accept: \n");
 			exit(1);
 		}
 
-		time_t now = time(NULL);
-		snprintf(send_buffer, sizeof(send_buffer), "Server time: %s\n", ctime(&now));
-		send(connfd, send_buffer, sizeof(send_buffer), 0);
+		int pid = fork();
+		if (pid == 0) {
+			// This is child
+			close(listenfd);
+			time_t now = time(NULL);
+			snprintf(send_buffer, sizeof(send_buffer), "Server time: %s\n", ctime(&now));
+
+			if (send(connfd, send_buffer, sizeof(send_buffer), 0) == -1) {
+				perror("send: \n");
+			}
+
+			close(connfd);
+			exit(0);
+		}
+
 		close(connfd);
 	}
 
