@@ -1,3 +1,4 @@
+#include <asm-generic/socket.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +47,10 @@ int main() {
 		perror("socket: ");
 		exit(1);
 	}
+
+	// Reuse
+	int yes = 1;
+	setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
 	if (bind(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
 		perror("bind: ");
