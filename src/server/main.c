@@ -37,13 +37,9 @@ struct IpPort get_ipport(struct sockaddr *sa) {
 	return ipport;
 }
 
-int main(int argc, char *argv[]) {
-	if (argc != 2) {
-		printf("Invalid arguments: port\n");
-		exit(1);
-	}
+int main() {
+	char *port = getenv("PORT");
 
-	char *port = argv[1];
 	struct addrinfo hints;
 	struct addrinfo *service_info; 
 
@@ -81,7 +77,8 @@ int main(int argc, char *argv[]) {
 
 	struct sockaddr_storage clientinfo;
 	socklen_t clientinfo_size;
-	printf("Waiting for connections...\n");
+	printf("Waiting for connections...\n\n");
+	fflush(stdout);
 
 	int connfd = accept(listenfd, (struct sockaddr *)&clientinfo, &clientinfo_size);
 	if (connfd == -1) {
@@ -90,7 +87,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct IpPort client_ipport = get_ipport((struct sockaddr *)&clientinfo);
-	printf("Connection from %s:%u\n", client_ipport.ipstr, client_ipport.port);
+	printf("Connection from %s:%u\n\n", client_ipport.ipstr, client_ipport.port);
+	fflush(stdout);
 
 	char msg[MAX_MSG_SIZE];
 
@@ -104,6 +102,7 @@ int main(int argc, char *argv[]) {
 			break;
 		} else {
 			printf("Client: %s\n", msg);
+			fflush(stdout);
 		}
 
 		memset(&msg, 0, sizeof(msg));

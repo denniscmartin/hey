@@ -9,14 +9,15 @@
 #define MAX_MSG_SIZE 1000
 
 
-int main(int argc, char *argv[]) {
-	if (argc != 3) {
-		printf("Invalid arguments: hostname port\n");
-		exit(1);
-	}
+int main() {
+	char *hostname = getenv("HOSTNAME");
+	char *port = getenv("PORT");
+	printf("SERVER HOSTNAME: %s\n", hostname);
+	printf("SERVER PORT: %s\n\n", port);
 
-	char *hostname = argv[1];
-	char *port = argv[2];
+	printf("Press ENTER to connect to the server.");
+	while (getchar() != '\n');
+
 	struct addrinfo hints;
 	struct addrinfo *service_info;
 
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	freeaddrinfo(service_info);
-	printf("Connection established\n");
+	printf("\nConnection established\n\n");
 
 	char msg[MAX_MSG_SIZE];
 	bool connected = true;
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
 
 		printf("%zd bytes sent\n", bytes_sent);
 		memset(&msg, 0, sizeof(msg));
+		printf("\n");
 	}
 
 	close(clientfd);
