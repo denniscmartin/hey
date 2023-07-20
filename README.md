@@ -1,6 +1,6 @@
 # Hey!
 
-In an attemp to learn about networking programming, I'm building a HTTP server. It's called **Hey!**.
+Right now, Hey! is a TCP server-client app. It helps me to learn about networking.
 
 ## References
 
