@@ -29,9 +29,9 @@ struct IpPort get_ipport(struct sockaddr *sa) {
 		inet_ntop(AF_INET, &(ipv4->sin_addr), ipport.ipstr, sizeof(ipport.ipstr));
 		ipport.port = ntohs(ipv4->sin_port);
 	} else {
-		struct sockaddr_in *ipv6 = (struct sockaddr_in *)sa;
-		inet_ntop(AF_INET, &(ipv6->sin_addr), ipport.ipstr, sizeof(ipport.ipstr));
-		ipport.port = ntohs(ipv6->sin_port);
+		struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)sa;
+		inet_ntop(AF_INET, &(ipv6->sin6_addr), ipport.ipstr, sizeof(ipport.ipstr));
+		ipport.port = ntohs(ipv6->sin6_port);
 	}
 
 	return ipport;
@@ -63,7 +63,6 @@ int main() {
 		perror("bind: ");
 		exit(1);
 	}
-
 
 	if (listen(listenfd, 10) == -1) {
 		perror("listen: ");
