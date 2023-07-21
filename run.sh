@@ -3,8 +3,6 @@
 sudo docker compose build
 sudo docker compose up -d 
 
-#!/bin/bash
-
 rectangle="
 +----------------------+
 |                      |
