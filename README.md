@@ -19,7 +19,7 @@ Some things that I find interesting:
 - Run `docker logs --follow hey-server-1` in another terminal. Doing that you can see the messages arrive at the server.
 - If you have Wireshark installed you can use it to sniff the packets sent in the Docker network. This is good to understand TCP.
 
-## What you could do next?
+## What could you do next?
 
 A good exercise will be to implement logic for some commands in the server. For example, you could program the server to send to the client the current
 date every time the server receives the command `date`.
