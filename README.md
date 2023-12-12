@@ -3,13 +3,6 @@
 
 Hey! is a simple TCP streaming app developed in C using POSIX APIs. Both client and server are containerized using Docker. I've made a video about this project -> [Youtube](https://youtu.be/r3CQ0euv6TQ).
 
--   Docs: <https://denniscm.com/proj/hey.html>
--   Main repo on SourceHut: <https://git.sr.ht/~denniscmartin/hey>
-    -   Mirrors:
-        -   Github: <https://github.com/denniscmartin/hey>
-        -   Gitlab: <https://gitlab.com/denniscmartin/hey>
-
-
 ## References
 
 This is the material I used to develop Hey!. The Beej's Guide to Network Programming is a nice introduction. Super easy to read:
